@@ -1,0 +1,34 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "arvak-lite"
+version = "0.1.0"
+description = "Lightweight quantum circuit compiler. Drop-in replacement for Qiskit transpile, Cirq optimize, and more. Powered by Arvak."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "LGPL-3.0-or-later" }
+authors = [
+    { name = "The HAL Contract", email = "hello@hal-contract.org" }
+]
+keywords = ["quantum", "compiler", "transpiler", "qiskit", "cirq", "pulser", "circuit"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+urls = { Homepage = "https://arvak.io", Repository = "https://github.com/hiq-lab/arvak-lite", Documentation = "https://arvak.io/lite" }
+dependencies = [
+    "arvak>=1.9.3",
+]
+
+[project.optional-dependencies]
+qiskit = ["qiskit>=1.0.0"]
+cirq = ["cirq>=1.0.0"]
+pennylane = ["pennylane>=0.32.0"]
+pulser = ["pulser-core>=1.0.0"]
+all = ["arvak-lite[qiskit,cirq,pennylane,pulser]"]
+dev = ["pytest>=8.0", "httpx>=0.27"]
