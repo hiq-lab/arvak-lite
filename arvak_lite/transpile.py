@@ -285,6 +285,72 @@ def _type_path(obj: Any) -> str:
     return (type(obj).__module__ + "." + type(obj).__qualname__).lower()
 
 
+def _to_pyquil(compiled: Any) -> Any:
+    """arvak.Circuit → pyquil.Program with standard 'ro' register.
+
+    qBraid's transpile(circuit, 'pyquil') creates separate DECLARE per
+    classical bit (m0, m1, ...) which Rigetti QVM rejects. We build the
+    Program manually with a single 'ro' register.
+    """
+    from pyquil import Program
+    from pyquil.gates import H, CNOT, CZ, X, Y, Z, S, T, RX, RY, RZ, MEASURE
+    from pyquil.quilbase import Declare
+
+    qasm = arvak.to_qasm(compiled)
+    ops = _parse_qasm_ops(qasm)
+    n_qubits = _count_qubits_from_ops(qasm, ops)
+
+    p = Program()
+    ro = p.declare("ro", "BIT", n_qubits)
+
+    gate_map = {
+        "h": H, "x": X, "y": Y, "z": Z, "s": S, "t": T,
+        "cx": CNOT, "cnot": CNOT, "cz": CZ,
+    }
+
+    for gate_name, qubits in ops:
+        if gate_name in gate_map:
+            p += gate_map[gate_name](*qubits)
+
+    for i in range(n_qubits):
+        p += MEASURE(i, ro[i])
+
+    return p
+
+
+def _parse_qasm_ops(qasm: str) -> list[tuple[str, list[int]]]:
+    """Extract gate operations from QASM as (name, [qubit_indices])."""
+    import re
+    ops: list[tuple[str, list[int]]] = []
+    for line in qasm.splitlines():
+        line = line.strip().rstrip(";")
+        if not line or line.startswith(("//", "OPENQASM", "include")):
+            continue
+        if line.startswith(("qubit", "bit", "creg", "qreg", "measure")):
+            continue
+        if "= measure" in line:
+            continue
+        match = re.match(r"(\w+)(?:\([^)]*\))?\s+(.+)", line)
+        if match:
+            gate = match.group(1).lower()
+            qubit_str = match.group(2)
+            qubit_indices = [int(x) for x in re.findall(r"q\[(\d+)\]", qubit_str)]
+            if qubit_indices:
+                ops.append((gate, qubit_indices))
+    return ops
+
+
+def _count_qubits_from_ops(qasm: str, ops: list) -> int:
+    """Determine qubit count from QASM or operations."""
+    for line in qasm.splitlines():
+        line = line.strip()
+        if line.startswith("qubit["):
+            return int(line.split("[")[1].split("]")[0])
+    if ops:
+        return max(q for _, qubits in ops for q in qubits) + 1
+    return 1
+
+
 def _count_gates(qasm: str) -> int:
     """Quick gate count from QASM string."""
     count = 0

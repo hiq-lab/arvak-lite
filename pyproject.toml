@@ -26,9 +26,28 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-qiskit = ["qiskit>=1.0.0"]
+qiskit = ["qiskit>=1.0.0", "qiskit-qasm3-import>=0.5.0"]
 cirq = ["cirq>=1.0.0"]
 pennylane = ["pennylane>=0.32.0"]
 pulser = ["pulser-core>=1.0.0"]
-all = ["arvak-lite[qiskit,cirq,pennylane,pulser]"]
+qbraid = ["qbraid>=0.8.0"]
+all = ["arvak-lite[qiskit,cirq,pennylane,pulser,qbraid]"]
 dev = ["pytest>=8.0", "httpx>=0.27"]
+
+# ---------------------------------------------------------------------------
+# Qiskit transpiler plugin registration
+# ---------------------------------------------------------------------------
+# These entry_points make Arvak available as a named plugin in Qiskit's
+# transpile() function, e.g.:
+#   transpile(circuit, optimization_method="arvak")
+#   transpile(circuit, routing_method="arvak")
+#   transpile(circuit, init_method="arvak")
+
+[project.entry-points."qiskit.transpiler.init"]
+arvak = "arvak_lite.qiskit_plugin:ArvakInitPlugin"
+
+[project.entry-points."qiskit.transpiler.routing"]
+arvak = "arvak_lite.qiskit_plugin:ArvakRoutingPlugin"
+
+[project.entry-points."qiskit.transpiler.optimization"]
+arvak = "arvak_lite.qiskit_plugin:ArvakOptimizationPlugin"
