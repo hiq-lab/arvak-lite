@@ -138,10 +138,14 @@ def _to_arvak(circuit: Any) -> tuple[str, arvak.Circuit]:
     if "pulser" in type_name:
         return "pulser", _from_pulser(circuit)
 
+    # Qrisp
+    if "qrisp" in type_name:
+        return "qrisp", _from_qrisp(circuit)
+
     raise TypeError(
         f"Unsupported circuit type: {type(circuit).__name__}. "
         "Supported: qiskit.QuantumCircuit, cirq.Circuit, pennylane QNode/tape, "
-        "pulser.Sequence, arvak.Circuit, or QASM string."
+        "pulser.Sequence, qrisp.QuantumCircuit, arvak.Circuit, or QASM string."
     )
 
 
@@ -165,6 +169,9 @@ def _from_arvak(compiled: arvak.Circuit, source_type: str) -> Any:
     if source_type == "pulser":
         # Pulser round-trip not yet supported — return QASM
         return arvak.to_qasm(compiled)
+
+    if source_type == "qrisp":
+        return _to_qrisp(compiled)
 
     return arvak.to_qasm(compiled)
 
@@ -274,6 +281,99 @@ def _from_pulser(circuit: Any) -> arvak.Circuit:
         "Pulser conversion currently requires digital mode sequences. "
         "Analog pulse sequences are not yet supported."
     )
+
+
+# ---------------------------------------------------------------------------
+# Qrisp
+# ---------------------------------------------------------------------------
+
+def _from_qrisp(circuit: Any) -> arvak.Circuit:
+    """Qrisp QuantumCircuit/QuantumSession → arvak.Circuit via QASM."""
+    try:
+        from qrisp import QuantumSession
+        if isinstance(circuit, QuantumSession):
+            circuit = circuit.compile()
+    except ImportError:
+        pass
+
+    # Qrisp exports QASM 2.0 — convert to 3.0 for Arvak's parser
+    try:
+        integration = arvak.get_integration("qrisp")
+        return integration.to_arvak(circuit)
+    except (ImportError, ValueError):
+        qasm2 = circuit.qasm()
+        qasm3 = _qasm2_to_qasm3(qasm2)
+        return arvak.from_qasm(qasm3)
+
+
+def _to_qrisp(compiled: arvak.Circuit) -> Any:
+    """arvak.Circuit → Qrisp QuantumCircuit via QASM."""
+    try:
+        integration = arvak.get_integration("qrisp")
+        return integration.from_arvak(compiled)
+    except (ImportError, ValueError):
+        from qrisp import QuantumCircuit as QrispCircuit
+        qasm3 = arvak.to_qasm(compiled)
+        qasm2 = _qasm3_to_qasm2(qasm3)
+        return QrispCircuit.from_qasm_str(qasm2)
+
+
+def _qasm2_to_qasm3(qasm2: str) -> str:
+    """Minimal QASM 2.0 → 3.0 conversion for Arvak's parser."""
+    lines = []
+    for line in qasm2.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("OPENQASM 2"):
+            lines.append("OPENQASM 3.0;")
+            continue
+        if stripped.startswith("include") and "qelib1" in stripped:
+            lines.append('include "stdgates.inc";')
+            continue
+        if stripped.startswith("qreg "):
+            # qreg q[2]; → qubit[2] q;
+            name = stripped.split()[1].split("[")[0]
+            size = stripped.split("[")[1].split("]")[0]
+            lines.append(f"qubit[{size}] {name};")
+            continue
+        if stripped.startswith("creg "):
+            name = stripped.split()[1].split("[")[0]
+            size = stripped.split("[")[1].split("]")[0]
+            lines.append(f"bit[{size}] {name};")
+            continue
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def _qasm3_to_qasm2(qasm3: str) -> str:
+    """Minimal QASM 3.0 → 2.0 conversion for Qrisp's parser."""
+    lines = []
+    for line in qasm3.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("OPENQASM 3"):
+            lines.append("OPENQASM 2.0;")
+            continue
+        if stripped.startswith("include") and "stdgates" in stripped:
+            lines.append('include "qelib1.inc";')
+            continue
+        if stripped.startswith("qubit["):
+            size = stripped.split("[")[1].split("]")[0]
+            name = stripped.rstrip(";").split()[-1].rstrip(";")
+            lines.append(f"qreg {name}[{size}];")
+            continue
+        if stripped.startswith("bit["):
+            size = stripped.split("[")[1].split("]")[0]
+            name = stripped.rstrip(";").split()[-1].rstrip(";")
+            lines.append(f"creg {name}[{size}];")
+            continue
+        # Skip QASM3-style measure assignments: c[0] = measure q[0];
+        if "= measure" in stripped:
+            parts = stripped.split("=")
+            creg = parts[0].strip()
+            qreg = parts[1].replace("measure", "").strip().rstrip(";")
+            lines.append(f"measure {qreg} -> {creg};")
+            continue
+        lines.append(line)
+    return "\n".join(lines)
 
 
 # ---------------------------------------------------------------------------

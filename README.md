@@ -30,6 +30,7 @@ pip install arvak-lite[qiskit]      # Qiskit + transpiler plugin
 pip install arvak-lite[cirq]        # Cirq
 pip install arvak-lite[pennylane]   # PennyLane
 pip install arvak-lite[pulser]      # Pulser (Pasqal)
+pip install arvak-lite[qrisp]       # Qrisp
 pip install arvak-lite[qbraid]      # qBraid multi-backend
 pip install arvak-lite[all]         # Everything
 ```
@@ -90,6 +91,7 @@ transpile(
 | Cirq | `cirq.Circuit` | Yes |
 | PennyLane | QNode / tape | Yes |
 | Pulser | `Sequence` (digital) | QASM output |
+| Qrisp | `QuantumCircuit` / `QuantumSession` | Yes |
 | OpenQASM | `str` (2.0 / 3.0) | Yes |
 | Arvak | `arvak.Circuit` | Yes |
 

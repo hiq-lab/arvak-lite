@@ -30,8 +30,9 @@ qiskit = ["qiskit>=1.0.0", "qiskit-qasm3-import>=0.5.0"]
 cirq = ["cirq>=1.0.0"]
 pennylane = ["pennylane>=0.32.0"]
 pulser = ["pulser-core>=1.0.0"]
+qrisp = ["qrisp>=0.4.0"]
 qbraid = ["qbraid>=0.8.0"]
-all = ["arvak-lite[qiskit,cirq,pennylane,pulser,qbraid]"]
+all = ["arvak-lite[qiskit,cirq,pennylane,pulser,qrisp,qbraid]"]
 dev = ["pytest>=8.0", "httpx>=0.27"]
 
 # ---------------------------------------------------------------------------
