@@ -20,7 +20,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Topic :: Scientific/Engineering :: Physics",
 ]
-urls = { Homepage = "https://arvak.io", Repository = "https://github.com/hiq-lab/arvak-lite", Documentation = "https://arvak.io/lite" }
+urls = { Homepage = "https://arvak.io", Repository = "https://github.com/hiq-lab/arvak-lite" }
 dependencies = [
     "arvak>=1.9.3",
 ]
