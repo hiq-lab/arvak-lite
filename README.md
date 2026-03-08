@@ -95,9 +95,14 @@ transpile(
 
 ## How it works
 
+arvak-lite is a thin Python wrapper (~12 KB). The actual compilation happens in
+[Arvak](https://github.com/hiq-lab/arvak), a Rust-native compiler exposed via
+PyO3. The full compiler fits in a ~600 KB wheel — no LLVM, no JVM, no heavy
+runtime. The speed comes from Rust, not from skipping optimization passes.
+
 1. Detect the input framework from the circuit's type
 2. Convert to `arvak.Circuit`
-3. Compile using Arvak's Rust-based optimizer
+3. Compile in Rust (gate decomposition, routing, optimization)
 4. Convert back to the original framework type
 
 ## License
