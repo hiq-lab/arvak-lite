@@ -1,5 +1,7 @@
 # arvak-lite
 
+[![Qiskit Ecosystem](https://img.shields.io/badge/Qiskit-Ecosystem-blueviolet)](https://qiskit.github.io/ecosystem/)
+
 Lightweight quantum circuit compiler wrapping [Arvak](https://arvak.io).
 Takes circuits from any major framework, compiles them, and returns the same type.
 
