@@ -79,7 +79,15 @@ def transpile(
         "optimization_level": optimization_level,
     }
     if coupling_map is not None:
-        compile_kwargs["coupling_map"] = arvak.CouplingMap(coupling_map)
+        # arvak >= 2.0: CouplingMap(n) takes a qubit count; edge lists go
+        # through from_edge_list. Size the device to cover both the circuit
+        # and the highest edge index.
+        edges = [tuple(edge) for edge in coupling_map]
+        num_qubits = max(
+            arvak_circuit.num_qubits,
+            max(max(a, b) for a, b in edges) + 1,
+        )
+        compile_kwargs["coupling_map"] = arvak.CouplingMap.from_edge_list(num_qubits, edges)
     if basis_gates is not None:
         compile_kwargs["basis_gates"] = arvak.BasisGates(basis_gates)
 

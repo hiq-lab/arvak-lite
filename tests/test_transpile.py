@@ -74,3 +74,38 @@ def test_transpile_invalid_type():
 def test_transpile_invalid_qasm():
     with pytest.raises(RuntimeError):
         transpile("not valid qasm at all")
+
+
+class TestCouplingMapEdgeList:
+    """Regression: arvak >= 2.0 changed CouplingMap(n) to take a qubit
+    count; the edge-list path must go through from_edge_list. Broken in
+    0.1.1 against arvak 2.x (TypeError on the num_qubits argument)."""
+
+    def test_transpile_with_edge_list_and_basis(self):
+        from qiskit import QuantumCircuit
+
+        qc = QuantumCircuit(3, 3)
+        qc.h(0)
+        qc.ccx(0, 1, 2)
+        qc.measure(range(3), range(3))
+
+        out = transpile(
+            qc,
+            coupling_map=[[0, 1], [1, 2]],
+            basis_gates=["cx", "rz", "sx", "x"],
+        )
+        ops = out.count_ops()
+        assert "ccx" not in ops, "ccx must be decomposed for the target"
+        assert all(g in {"cx", "rz", "sx", "x", "measure", "barrier"} for g in ops)
+
+    def test_edge_list_wider_than_circuit(self):
+        from qiskit import QuantumCircuit
+
+        qc = QuantumCircuit(2)
+        qc.h(0)
+        qc.cx(0, 1)
+
+        # Device has 5 qubits, circuit only 2 — num_qubits must follow
+        # the highest edge index, not the circuit width.
+        out = transpile(qc, coupling_map=[[0, 1], [1, 2], [2, 3], [3, 4]])
+        assert out.num_qubits >= 2

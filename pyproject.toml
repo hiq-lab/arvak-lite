@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "arvak-lite"
-version = "0.1.1"
+version = "0.1.2"
 description = "Lightweight quantum circuit compiler. Drop-in replacement for Qiskit transpile, Cirq optimize, and more. Powered by Arvak."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,7 +22,7 @@ classifiers = [
 ]
 urls = { Homepage = "https://arvak.io", Repository = "https://github.com/hiq-lab/arvak-lite" }
 dependencies = [
-    "arvak>=1.9.3",
+    "arvak>=2.1.3",
 ]
 
 [project.optional-dependencies]
